@@ -1,17 +1,17 @@
 import React from 'react';
 import { render, cleanup } from '@testing-library/react-native';
-import HomeScreen from '../index';
+import BatteryScreen from '../index';
 import * as Battery from 'expo-battery';
 
 // Create a mock for the expo-battery module
 jest.mock('expo-battery', () => ({
   getBatteryLevelAsync: jest.fn(),
   addBatteryLevelListener: jest.fn().mockReturnValue({
-    remove: jest.fn()
+    remove: jest.fn(),
   }),
 }));
 
-describe('HomeScreen', () => {
+describe('BatteryScreen', () => {
   // Clean up after each test
   afterEach(() => {
     cleanup();
@@ -23,7 +23,7 @@ describe('HomeScreen', () => {
     (Battery.getBatteryLevelAsync as jest.Mock).mockResolvedValue(0.15);
 
     // Render the component
-    const { findByText } = render(<HomeScreen />);
+    const { findByText } = render(<BatteryScreen />);
 
     // Wait for the battery level to be fetched and displayed
     const batteryDescription = await findByText(
@@ -39,7 +39,7 @@ describe('HomeScreen', () => {
     (Battery.getBatteryLevelAsync as jest.Mock).mockResolvedValue(0.4);
 
     // Render the component
-    const { findByText } = render(<HomeScreen />);
+    const { findByText } = render(<BatteryScreen />);
 
     // Wait for the battery level to be fetched and displayed
     const batteryDescription = await findByText(
@@ -55,7 +55,7 @@ describe('HomeScreen', () => {
     (Battery.getBatteryLevelAsync as jest.Mock).mockResolvedValue(0.8);
 
     // Render the component
-    const { findByText } = render(<HomeScreen />);
+    const { findByText } = render(<BatteryScreen />);
 
     // Wait for the battery level to be fetched and displayed
     const batteryDescription = await findByText(
