@@ -1,0 +1,42 @@
+appId: com.testingguide.demo
+---
+- launchApp
+
+# Step 1: Click the bottom navigation tab named "Testing Demo"
+- tapOn: 'Testing Demo'
+
+# Step 2: Scroll down until the "Register" button is visible
+- scrollUntilVisible:
+    element: 'Register'
+    direction: DOWN
+
+# Step 3: Enter "Felix Wong" in name input
+- tapOn:
+    id: 'demo-user-form-name-input'
+- inputText: 'Felix Wong'
+
+- scrollUntilVisible:
+    element: 'Enter your email'
+    direction: DOWN
+
+# Step 4: Enter "felix@gmail.com" in email input
+- tapOn:
+    id: 'demo-user-form-email-input'
+- inputText: 'felix@gmail.com'
+
+- scrollUntilVisible:
+    element: 'Enter your password'
+    direction: DOWN
+
+# Step 5: Enter "P@ssword123" in password input
+- tapOn:
+    id: 'demo-user-form-password-input'
+- inputText: 'P@ssword123'
+
+- hideKeyboard
+
+# Step 6: Press "Register" button
+- tapOn: 'Register'
+
+# Step 7: Verify "Registration Successful!" text is displayed
+- assertVisible: 'Registration Successful!'
