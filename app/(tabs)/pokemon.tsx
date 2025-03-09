@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,74 +10,53 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { pokemonRepository, Pokemon } from '@/repository/pokemonRepository';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function PokemonScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [pokemon, setPokemon] = useState<Pokemon | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [popularPokemon, setPopularPokemon] = useState<{ name: string; url: string }[]>([]);
-  const [loadingPopular, setLoadingPopular] = useState(true);
   
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  // Load popular Pokemon on component mount
-  useEffect(() => {
-    const fetchPopularPokemon = async () => {
-      try {
-        const data = await pokemonRepository.searchPokemon(20, 0);
-        setPopularPokemon(data.results);
-      } catch (error) {
-        console.error('Error fetching popular Pokemon:', error);
-      } finally {
-        setLoadingPopular(false);
+  // Query for popular Pokemon
+  const popularPokemonQuery = useQuery<{ count: number, results: { name: string, url: string }[] }>({
+    queryKey: ['popularPokemon'],
+    queryFn: () => pokemonRepository.searchPokemon(20, 0),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Query for searched Pokemon
+  const pokemonQuery = useQuery<Pokemon | null>({
+    queryKey: ['pokemon', searchTerm],
+    queryFn: () => pokemonRepository.getPokemon(searchTerm),
+    enabled: !!searchTerm, // Only run query when searchTerm is not empty
+  });
+  
+  // Update recent searches when a Pokemon is successfully found
+  React.useEffect(() => {
+    if (pokemonQuery.data && searchTerm) {
+      // Add to recent searches if not already there
+      if (!recentSearches.includes(searchTerm.toLowerCase())) {
+        setRecentSearches(prev => [searchTerm.toLowerCase(), ...prev].slice(0, 5));
       }
-    };
+    }
+  }, [pokemonQuery.data, searchTerm, recentSearches]);
 
-    fetchPopularPokemon();
-  }, []);
-
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!searchQuery.trim()) {
-      setError('Please enter a Pokemon name or ID');
       return;
     }
-
-    setLoading(true);
-    setError('');
-    setPokemon(null);
-
-    try {
-      const result = await pokemonRepository.getPokemon(searchQuery.trim());
-      
-      if (result) {
-        setPokemon(result);
-        
-        // Add to recent searches if not already there
-        if (!recentSearches.includes(searchQuery.trim().toLowerCase())) {
-          setRecentSearches(prev => [searchQuery.trim().toLowerCase(), ...prev].slice(0, 5));
-        }
-      } else {
-        setError(`Pokemon "${searchQuery}" not found`);
-      }
-    } catch (error) {
-      console.error('Error searching Pokemon:', error);
-      setError('An error occurred while searching. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setSearchTerm(searchQuery.trim());
   };
 
   const handleSelectPokemon = (name: string) => {
     setSearchQuery(name);
-    setTimeout(() => {
-      handleSearch();
-    }, 100);
+    setSearchTerm(name);
   };
 
   // Format stat name for display
@@ -138,9 +117,11 @@ export default function PokemonScreen() {
         </TouchableOpacity>
       </View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!searchTerm && searchQuery.trim() && <Text style={styles.errorText}>Please enter a Pokemon name or ID</Text>}
+      {pokemonQuery.isError && <Text style={styles.errorText}>An error occurred while searching. Please try again.</Text>}
+      {pokemonQuery.data === null && searchTerm && <Text style={styles.errorText}>{`Pokemon "${searchTerm}" not found`}</Text>}
 
-      {recentSearches.length > 0 && !pokemon && !loading && (
+      {recentSearches.length > 0 && !pokemonQuery.data && !pokemonQuery.isLoading && !searchTerm && (
         <View style={styles.recentContainer}>
           <Text style={styles.sectionTitle}>Recent Searches</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -157,14 +138,16 @@ export default function PokemonScreen() {
         </View>
       )}
 
-      {!pokemon && !loading && !error && (
+      {!pokemonQuery.data && !pokemonQuery.isLoading && !searchTerm && (
         <View style={styles.popularContainer}>
           <Text style={styles.sectionTitle}>Popular Pokemon</Text>
-          {loadingPopular ? (
+          {popularPokemonQuery.isLoading ? (
             <ActivityIndicator size="large" color={colors.tint} />
+          ) : popularPokemonQuery.isError ? (
+            <Text style={styles.errorText}>Failed to load popular Pokemon</Text>
           ) : (
             <FlatList
-              data={popularPokemon}
+              data={popularPokemonQuery.data?.results || []}
               keyExtractor={(item) => item.name}
               numColumns={2}
               renderItem={({ item }) => (
@@ -182,22 +165,22 @@ export default function PokemonScreen() {
         </View>
       )}
 
-      {loading && (
+      {pokemonQuery.isLoading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={styles.loadingText}>Searching for Pokemon...</Text>
         </View>
       )}
 
-      {pokemon && (
+      {pokemonQuery.data && (
         <ScrollView style={styles.resultContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.pokemonHeader}>
             <Text style={styles.pokemonName}>
-              {pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)} #{pokemon.id}
+              {pokemonQuery.data.name.charAt(0).toUpperCase() + pokemonQuery.data.name.slice(1)} #{pokemonQuery.data.id}
             </Text>
             
             <View style={styles.typesContainer}>
-              {pokemon.types.map((typeInfo, index) => (
+              {pokemonQuery.data.types.map((typeInfo, index) => (
                 <View 
                   key={index} 
                   style={[
@@ -217,8 +200,8 @@ export default function PokemonScreen() {
             <Image
               style={styles.pokemonImage}
               source={{ 
-                uri: pokemon.sprites.other['official-artwork'].front_default || 
-                     pokemon.sprites.front_default 
+                uri: pokemonQuery.data?.sprites.other['official-artwork'].front_default || 
+                     pokemonQuery.data?.sprites.front_default 
               }}
               resizeMode="contain"
             />
@@ -227,18 +210,18 @@ export default function PokemonScreen() {
           <View style={styles.infoContainer}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Height:</Text>
-              <Text style={styles.infoValue}>{pokemon.height / 10} m</Text>
+              <Text style={styles.infoValue}>{(pokemonQuery.data?.height || 0) / 10} m</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Weight:</Text>
-              <Text style={styles.infoValue}>{pokemon.weight / 10} kg</Text>
+              <Text style={styles.infoValue}>{(pokemonQuery.data?.weight || 0) / 10} kg</Text>
             </View>
           </View>
 
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionHeader}>Abilities</Text>
             <View style={styles.abilitiesContainer}>
-              {pokemon.abilities.map((abilityInfo, index) => (
+              {pokemonQuery.data?.abilities.map((abilityInfo, index) => (
                 <View key={index} style={styles.abilityTag}>
                   <Text style={styles.abilityText}>
                     {abilityInfo.ability.name.replace('-', ' ')}
@@ -250,7 +233,7 @@ export default function PokemonScreen() {
 
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionHeader}>Base Stats</Text>
-            {pokemon.stats.map((statInfo, index) => (
+            {pokemonQuery.data?.stats.map((statInfo, index) => (
               <View key={index} style={styles.statRow}>
                 <Text style={styles.statName}>{formatStatName(statInfo.stat.name)}</Text>
                 <Text style={styles.statValue}>{statInfo.base_stat}</Text>
