@@ -49,6 +49,7 @@ export default function PokemonScreen() {
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
+      setSearchTerm(''); // Reset searchTerm when search input is empty
       return;
     }
     setSearchTerm(searchQuery.trim());
