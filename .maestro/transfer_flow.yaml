@@ -1,0 +1,52 @@
+appId: my.rytbank.app.dev
+---
+- launchApp
+
+# Key in passcode
+- repeat:
+    times: 3
+    commands:
+      - tapOn: '5'
+
+- repeat:
+    times: 3
+    commands:
+      - tapOn: '6'
+
+- assertVisible: Transfer
+
+- tapOn: Transfer
+
+- tapOn:
+    point: 500, 333
+
+- inputText:
+    text: 'Kai Xiang'
+    label: Search Contact
+
+- tapOn:
+    text: CHIN KAI XIANG
+    label: Tap on contact
+
+- repeat:
+    times: 5
+    commands:
+      - tapOn: '9'
+
+- tapOn: Next
+
+- tapOn:
+    id: 'approve-button'
+
+# Key in passcode
+- repeat:
+    times: 3
+    commands:
+      - tapOn: '5'
+
+- repeat:
+    times: 3
+    commands:
+      - tapOn: '6'
+
+- assertVisible: Successful
