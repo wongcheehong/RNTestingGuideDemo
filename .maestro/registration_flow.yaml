@@ -33,7 +33,9 @@ appId: com.testingguide.demo
     id: 'demo-user-form-password-input'
 - inputText: 'P@ssword123'
 
-- hideKeyboard
+- tapOn:
+    text: 'Register'
+    label: Dismiss keyboard
 
 # Step 6: Press "Register" button
 - tapOn: 'Register'
