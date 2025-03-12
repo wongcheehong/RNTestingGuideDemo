@@ -15,17 +15,11 @@ export default function TestingDemoScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Calculator Component</Text>
-        <Text style={styles.sectionDescription}>
-          This component has unit tests for its math functions and integration tests for user interactions.
-        </Text>
         <Calculator testID="demo-calculator" />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>User Form Component</Text>
-        <Text style={styles.sectionDescription}>
-          This component has unit tests for validation functions and integration tests for form submission.
-        </Text>
         <UserForm testID="demo-user-form" />
       </View>
     </ScrollView>
@@ -61,10 +55,5 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
   },
 });
